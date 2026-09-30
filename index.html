@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Camera Test</title>
+
+<style>
+body{
+font-family: Arial;
+text-align:center;
+background:#f5f5f5;
+}
+
+video{
+width:90%;
+max-width:500px;
+border-radius:10px;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+font-size:16px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>攝影機測試</h2>
+
+<video id="video" autoplay playsinline></video>
+
+<br>
+
+<button onclick="startCamera()">開啟攝影機</button>
+<button onclick="stopCamera()">關閉攝影機</button>
+
+<script>
+
+let stream;
+
+async function startCamera(){
+
+try{
+
+stream = await navigator.mediaDevices.getUserMedia({
+video:true
+});
+
+document.getElementById("video").srcObject = stream;
+
+}catch(err){
+
+alert("無法開啟攝影機");
+
+}
+
+}
+
+function stopCamera(){
+
+if(stream){
+
+stream.getTracks().forEach(track=>track.stop());
+
+}
+
+}
+
+</script>
+
+</body>
+</html>

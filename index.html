@@ -1,39 +1,108 @@
-async function onScanSuccess(decodedText, decodedResult) {
-      if (isProcessing) return;
-      isProcessing = true;
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code 掃描器</title>
 
-      const statusEl = document.getElementById('status');
-      const resultEl = document.getElementById('scanned-result');
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
-      resultEl.textContent = decodedText;
-      statusEl.textContent = '掃描成功，正在寫入試算表...';
-      statusEl.style.color = '#d97706';
-
-      try {
-        // 使用 URLSearchParams 以 Form 格式發送，避開 Google CORS 限制
-        const formData = new URLSearchParams();
-        formData.append('qrContent', decodedText);
-
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: formData.toString()
-        });
-
-        statusEl.textContent = '✅ 已成功寫入 Google 試算表！';
-        statusEl.style.color = 'green';
-      } catch (error) {
-        console.error('寫入失敗：', error);
-        statusEl.textContent = '❌ 寫入試算表失敗，請重試。';
-        statusEl.style.color = 'red';
-      }
-
-      setTimeout(() => {
-        isProcessing = false;
-        statusEl.textContent = '請對準下一個 QR Code...';
-        statusEl.style.color = '#333';
-      }, 3000);
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
     }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>QR Code 掃描器</h1>
+
+  <div id="reader"></div>
+
+  <div id="result">
+    尚未掃描
+  </div>
+
+  <script>
+
+    // 改成你的 Google Apps Script Web App 網址
+    const GAS_URL = "你的GAS網址";
+
+    let scanned = false;
+
+    function onScanSuccess(decodedText) {
+
+      // 避免同一個 QR Code 重複寫入
+      if (scanned) return;
+      scanned = true;
+
+      document.getElementById("result").innerHTML =
+        "掃描結果：" + decodedText + "<br>寫入中...";
+
+      fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          qrCode: decodedText
+        })
+      })
+      .then(response => response.text())
+      .then(data => {
+
+        document.getElementById("result").innerHTML =
+          "掃描結果：" + decodedText +
+          "<br>" + data;
+
+        setTimeout(() => {
+          scanned = false;
+        }, 2000);
+
+      })
+      .catch(error => {
+
+        document.getElementById("result").innerHTML =
+          "寫入失敗：" + error;
+
+        scanned = false;
+
+      });
+    }
+
+    function onScanFailure(error) {
+      // 沒掃描到時不處理
+    }
+
+    const scanner = new Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 250
+        }
+      },
+      false
+    );
+
+    scanner.render(
+      onScanSuccess,
+      onScanFailure
+    );
+
+  </script>
+
+</body>
+</html>

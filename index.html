@@ -1,74 +1,5 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Code 掃描與自動寫入試算表</title>
-  <!-- 導入開源掃描函式庫 Html5-QRCode -->
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background-color: #f4f4f9;
-    }
-    h2 {
-      margin-bottom: 10px;
-    }
-    #reader {
-      width: 90%;
-      max-width: 500px;
-      background: #000;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    #result-box {
-      margin-top: 20px;
-      padding: 15px 20px;
-      width: 80%;
-      max-width: 460px;
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    #scanned-result {
-      font-weight: bold;
-      color: #007bff;
-      word-break: break-all;
-    }
-    #status {
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-
-  <h2>QR Code 掃描器 (自動寫入試算表)</h2>
-  
-  <!-- 掃描畫面區域 -->
-  <div id="reader"></div>
-
-  <!-- 結果顯示區域 -->
-  <div id="result-box">
-    <p>狀態：<span id="status">準備中...</span></p>
-    <p>最近讀取：<span id="scanned-result">尚未掃描</span></p>
-  </div>
-
-  <script>
-    // 已帶入您提供的 Google Apps Script API 網址
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyebQkKalmdU1MTmSt5AjpPR7saa4tATq8Sw3iTOQezn2XRCrJ9MrkNFpFlyYksLf5dvw/exec";
-
-    let isProcessing = false; // 防止重複發送
-
-    async function onScanSuccess(decodedText, decodedResult) {
-      if (isProcessing) return; // 若正在處理前一次掃描則跳過
+async function onScanSuccess(decodedText, decodedResult) {
+      if (isProcessing) return;
       isProcessing = true;
 
       const statusEl = document.getElementById('status');
@@ -79,16 +10,30 @@
       statusEl.style.color = '#d97706';
 
       try {
-        // 將資料傳送到 Google Apps Script
+        // 使用 URLSearchParams 以 Form 格式發送，避開 Google CORS 限制
+        const formData = new URLSearchParams();
+        formData.append('qrContent', decodedText);
+
         await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // 避開跨網域限制
+          mode: 'no-cors',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
           },
-          body: JSON.stringify({ qrContent: decodedText })
+          body: formData.toString()
         });
 
         statusEl.textContent = '✅ 已成功寫入 Google 試算表！';
         statusEl.style.color = 'green';
       } catch (error) {
+        console.error('寫入失敗：', error);
+        statusEl.textContent = '❌ 寫入試算表失敗，請重試。';
+        statusEl.style.color = 'red';
+      }
+
+      setTimeout(() => {
+        isProcessing = false;
+        statusEl.textContent = '請對準下一個 QR Code...';
+        statusEl.style.color = '#333';
+      }, 3000);
+    }

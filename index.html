@@ -62,8 +62,8 @@
   </div>
 
   <script>
-    // ⚠️ 請將下方替換為您在 Google Apps Script 部署取得的網址 ⚠️
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/您的GOOGLE_SCRIPT_ID/exec";
+    // 已帶入您提供的 Google Apps Script API 網址
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyebQkKalmdU1MTmSt5AjpPR7saa4tATq8Sw3iTOQezn2XRCrJ9MrkNFpFlyYksLf5dvw/exec";
 
     let isProcessing = false; // 防止重複發送
 
@@ -92,36 +92,3 @@
         statusEl.textContent = '✅ 已成功寫入 Google 試算表！';
         statusEl.style.color = 'green';
       } catch (error) {
-        console.error('寫入失敗：', error);
-        statusEl.textContent = '❌ 寫入試算表失敗，請重試。';
-        statusEl.style.color = 'red';
-      }
-
-      // 冷卻 3 秒後解除鎖定，允許下一次掃描
-      setTimeout(() => {
-        isProcessing = false;
-        statusEl.textContent = '請對準下一個 QR Code...';
-        statusEl.style.color = '#333';
-      }, 3000);
-    }
-
-    function onScanFailure(error) {
-      // 未掃描到時持續觸發，忽略即可
-    }
-
-    // 初始化掃描器
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader",
-      { 
-        fps: 10,
-        qrbox: { width: 250, height: 250 }
-      },
-      false
-    );
-
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-    document.getElementById('status').textContent = '請允許攝影機權限並對準 QR Code';
-  </script>
-
-</body>
-</html>
